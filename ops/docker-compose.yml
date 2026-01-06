@@ -1,0 +1,40 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./letsencrypt:/letsencrypt
+    restart: unless-stopped
+
+  site:
+    build:
+      context: ../app
+      dockerfile: Dockerfile
+    container_name: everythingsjake-site
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP router: redirect to HTTPS
+      - "traefik.http.routers.site-http.rule=Host(`everythingsjake.net`) || Host(`www.everythingsjake.net`)"
+      - "traefik.http.routers.site-http.entrypoints=web"
+      - "traefik.http.routers.site-http.middlewares=redirect-to-https"
+
+      # Redirect middleware
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # HTTPS router: serve the app with TLS via Let's Encrypt
+      - "traefik.http.routers.site-https.rule=Host(`everythingsjake.net`) || Host(`www.everythingsjake.net`)"
+      - "traefik.http.routers.site-https.entrypoints=websecure"
+      - "traefik.http.routers.site-https.tls=true"
+      - "traefik.http.routers.site-https.tls.certresolver=letsencrypt"
+
+      # Service points to the container port
+      - "traefik.http.services.site.loadbalancer.server.port=3000"
