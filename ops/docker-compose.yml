@@ -39,6 +39,8 @@ services:
       - "traefik.http.services.site.loadbalancer.server.port=3000"
 
   watchtower:
+    environment:
+        - DOCKER_API_VERSION=1.44
     image: containrrr/watchtower
     container_name: watchtower
     restart: unless-stopped
