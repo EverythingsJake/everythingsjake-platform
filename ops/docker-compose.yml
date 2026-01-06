@@ -14,9 +14,7 @@ services:
     restart: unless-stopped
 
   site:
-    build:
-      context: ../app
-      dockerfile: Dockerfile
+    image: ghcr.io/everythingsjake/everythingsjake-platform:main
     container_name: everythingsjake-site
     restart: unless-stopped
     labels:
