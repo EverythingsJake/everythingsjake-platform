@@ -36,15 +36,3 @@ jobs:
             ghcr.io/everythingsjake/everythingsjake-platform:main
             ghcr.io/everythingsjake/everythingsjake-platform:${{ github.sha }}
 
-      - name: Deploy on server (pull + restart)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT }}
-          script: |
-            cd ~/everythingsjake-platform/ops
-            docker compose pull
-            docker compose up -d
-            docker image prune -f

@@ -18,6 +18,7 @@ services:
     container_name: everythingsjake-site
     restart: unless-stopped
     labels:
+      - "com.centurylinklabs.watchtower.enable=true"
       - "traefik.enable=true"
 
       # HTTP router: redirect to HTTPS
@@ -36,3 +37,12 @@ services:
 
       # Service points to the container port
       - "traefik.http.services.site.loadbalancer.server.port=3000"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 --cleanup
+
