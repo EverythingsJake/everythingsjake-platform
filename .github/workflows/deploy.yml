@@ -1,14 +1,21 @@
+# GitHub Actions workflow: Build and push Docker image to GitHub Container Registry (GHCR).
 name: Build and Deploy
 
+# Triggers: pushes to `main` and `dev` branches.
 on:
   push:
     branches: ["main", "dev"]
 
+# Permissions: grants read access to repository contents and write access to Packages
+# so the workflow can push container images.
 permissions:
   contents: read
   packages: write
 
 jobs:
+  # Job: build-and-deploy
+  # Builds the Docker image from `./app/Dockerfile`, logs into GHCR, and pushes
+  # the resulting images with branch and commit SHA tags.
   build-and-deploy:
     runs-on: ubuntu-latest
 
@@ -24,6 +31,8 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
+          # Uses the built-in `GITHUB_TOKEN` to authenticate. If replaced
+          # with a PAT, set it in repository secrets and reference it here.
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image
@@ -32,6 +41,8 @@ jobs:
           context: ./app
           file: ./app/Dockerfile
           push: true
+          # Push two tags: a human-readable tag based on the branch/ref name,
+          # and an immutable tag that references the commit SHA.
           tags: |
             ghcr.io/everythingsjake/everythingsjake-platform:${{ github.ref_name }}
             ghcr.io/everythingsjake/everythingsjake-platform:${{ github.sha }}

@@ -1,4 +1,7 @@
 services:
+  # Traefik: Edge reverse proxy and ACME (Let's Encrypt).
+  # Exposes ports 80/443, mounts the Docker socket and Traefik config,
+  # and routes/terminates TLS for other services via labels.
   traefik:
     image: traefik:v3.6
     container_name: traefik
@@ -13,6 +16,9 @@ services:
       - ./letsencrypt:/letsencrypt
     restart: unless-stopped
 
+  # Site (production): Next.js app served on container port 3000.
+  # Image: ghcr.io/everythingsjake/everythingsjake-platform:main
+  # Healthcheck pings `/healthz`. Routed by Traefik and updated by Watchtower
   site:
     image: ghcr.io/everythingsjake/everythingsjake-platform:main
     container_name: everythingsjake-site
@@ -44,28 +50,32 @@ services:
       # Site points to container port 3000
       - "traefik.http.services.site.loadbalancer.server.port=3000"
 
+  # Site (staging): Development build of the site for `staging.everythingsjake.net`.
+  # Uses the `dev` image tag; routed by Traefik to port 3000 for testing.
   site-staging:
-      image: ghcr.io/everythingsjake/everythingsjake-platform:dev
-      container_name: everythingsjake-site-staging
-      restart: unless-stopped
-      labels:
-        - "com.centurylinklabs.watchtower.enable=true"
-        - "traefik.enable=true"
+    image: ghcr.io/everythingsjake/everythingsjake-platform:dev
+    container_name: everythingsjake-site-staging
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=true"
 
-        # HTTP router: redirect to HTTPS
-        - "traefik.http.routers.staging-http.rule=Host(`staging.everythingsjake.net`)"
-        - "traefik.http.routers.staging-http.entrypoints=web"
-        - "traefik.http.routers.staging-http.middlewares=redirect-to-https"
+      # HTTP router: redirect to HTTPS
+      - "traefik.http.routers.staging-http.rule=Host(`staging.everythingsjake.net`)"
+      - "traefik.http.routers.staging-http.entrypoints=web"
+      - "traefik.http.routers.staging-http.middlewares=redirect-to-https"
 
-        # HTTPS router
-        - "traefik.http.routers.staging-https.rule=Host(`staging.everythingsjake.net`)"
-        - "traefik.http.routers.staging-https.entrypoints=websecure"
-        - "traefik.http.routers.staging-https.tls=true"
-        - "traefik.http.routers.staging-https.tls.certresolver=letsencrypt"
+      # HTTPS router: serve the app with TLS via Let's Encrypt
+      - "traefik.http.routers.staging-https.rule=Host(`staging.everythingsjake.net`)"
+      - "traefik.http.routers.staging-https.entrypoints=websecure"
+      - "traefik.http.routers.staging-https.tls=true"
+      - "traefik.http.routers.staging-https.tls.certresolver=letsencrypt"
 
-        # Site-Staging points to the container port 3000
-        - "traefik.http.services.staging.loadbalancer.server.port=3000"
+      # Site-Staging points to the container port 3000
+      - "traefik.http.services.staging.loadbalancer.server.port=3000"
 
+  # Watchtower: Automatic container updater.
+  # Polls Docker for image updates, can cleanup old images, and honors labels.
   watchtower:
     environment:
         - DOCKER_API_VERSION=1.44
@@ -77,6 +87,8 @@ services:
       - /home/jake/.docker/config.json:/config.json:ro
     command: --interval 60 --cleanup --label-enable
 
+  # Uptime Kuma: Uptime monitoring dashboard.
+  # Persists data under `./uptime-kuma`. Routed by Traefik at `status.everythingsjake.net`.
   uptime-kuma:
     image: louislam/uptime-kuma:1
     container_name: uptime-kuma
