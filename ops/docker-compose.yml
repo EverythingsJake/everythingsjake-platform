@@ -44,6 +44,28 @@ services:
       # Site points to container port 3000
       - "traefik.http.services.site.loadbalancer.server.port=3000"
 
+  site-staging:
+      image: ghcr.io/everythingsjake/everythingsjake-platform:dev
+      container_name: everythingsjake-site-staging
+      restart: unless-stopped
+      labels:
+        - "com.centurylinklabs.watchtower.enable=true"
+        - "traefik.enable=true"
+
+        # HTTP router: redirect to HTTPS
+        - "traefik.http.routers.staging-http.rule=Host(`staging.everythingsjake.net`)"
+        - "traefik.http.routers.staging-http.entrypoints=web"
+        - "traefik.http.routers.staging-http.middlewares=redirect-to-https"
+
+        # HTTPS router
+        - "traefik.http.routers.staging-https.rule=Host(`staging.everythingsjake.net`)"
+        - "traefik.http.routers.staging-https.entrypoints=websecure"
+        - "traefik.http.routers.staging-https.tls=true"
+        - "traefik.http.routers.staging-https.tls.certresolver=letsencrypt"
+
+        # Site-Staging points to the container port 3000
+        - "traefik.http.services.staging.loadbalancer.server.port=3000"
+
   watchtower:
     environment:
         - DOCKER_API_VERSION=1.44

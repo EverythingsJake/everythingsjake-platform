@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
 
 permissions:
   contents: read
@@ -33,6 +33,6 @@ jobs:
           file: ./app/Dockerfile
           push: true
           tags: |
-            ghcr.io/everythingsjake/everythingsjake-platform:main
+            ghcr.io/everythingsjake/everythingsjake-platform:${{ github.ref_name }}
             ghcr.io/everythingsjake/everythingsjake-platform:${{ github.sha }}
 
