@@ -19,3 +19,6 @@ ops/letsencrypt/acme.json
 
 # VSCode
 .vscode/
+
+# Uptime Kuma data
+ops/uptime-kuma/data/
